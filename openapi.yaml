@@ -1,0 +1,192 @@
+openapi: 3.1.0
+info:
+  title: Tawasal SuperApp API
+  description: API to interact with mini-apps within the Tawasal SuperApp ecosystem.
+  version: "1.0.0"
+servers:
+  - url: "https://api.tawasal.ae/"
+
+paths:
+  /users/:id/verify:
+    post:
+      summary: Verify user by user's token and get available info
+      operationId: verifyUser
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: User token to validate the user's identity.
+              required:
+                - token
+      responses:
+        "200":
+          description: User successfully verified.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: 4354678
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+        "400":
+          description: Bad request when parameters are incorrect.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntityError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/:id/push:
+    post:
+      summary: Send a push notification
+      operationId: sendPush
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                  description: The message body of the push notification.
+                title:
+                  type: string
+                  description: The title of the push notification.
+                link:
+                  type: string
+                  description: The URL to which the notification will redirect.
+              required:
+                - body
+                - title
+                - link
+      responses:
+        "202":
+          description: Push notification accepted and being processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pushId:
+                    type: string
+                    format: uuid
+                    example: "123e4567-e89b-12d3-a456-426655440000"
+                    description: The unique identifier of the push notification in UUID format.
+        "400":
+          description: Bad request when parameters are incorrect.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /push/{id}:
+    get:
+      summary: Get push notification status
+      operationId: getPushStatus
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier for the push notification in UUID format.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Push notification status retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    enum:
+                      - delivered
+                      - rejected
+                    description: The status of the push notification.
+        "400":
+          description: Bad request when parameters are incorrect.
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    UnauthorizedError:
+      description: The API key was missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    ForbiddenError:
+      description: The provided API key does not have permission to perform the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFoundError:
+      description: The resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    UnprocessableEntityError:
+      description: The request body is missing required fields or the values are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    InternalServerError:
+      description: An error occurred on the server.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
